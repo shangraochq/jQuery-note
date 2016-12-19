@@ -72,10 +72,20 @@ var
 	// A simple way to check for HTML strings
 	// Prioritize #id over <tag> to avoid XSS via location.hash (#9521)
 	// Strict HTML recognition (#11290: must start with <)
+	//rquickExpr.test('<li>') -->true
+	//rquickExpr.test('<li>1</li><li>2</li>') -->true
+	//rquickExpr.test('<li>hello') -->true
+	//rquickExpr.test('#abc') -->true
 	rquickExpr = /^(?:\s*(<[\w\W]+>)[^>]*|#([\w-]*))$/,//匹配元素节点和ID
 
 	// Match a standalone tag
-	rsingleTag = /^<(\w+)\s*\/?>(?:<\/\1>|)$/,//匹配单标签
+	// 这个正则匹配的是 纯单个HTML标签,不带任何属性 ，如 '<html></html>' 或者 '<img/>'
+	// rsingleTag.test('<html>') --> true
+	// rsingleTag.test('<html></html>') --> true
+	// rsingleTag.test('<html></html><html></html>') --> false
+	// rsingleTag.test('<img/>') --> true
+	// rsingleTag.test('<div class="foo"></div>') --> false
+	rsingleTag = /^<(\w+)\s*\/?>(?:<\/\1>|)$/,
 
 	// Matches dashed string for camelizing
 	rmsPrefix = /^-ms-/,
@@ -93,27 +103,43 @@ var
 		jQuery.ready();
 	};
 
+// 给 jQuery.prototype 设置别名 jQuery.fn
 jQuery.fn = jQuery.prototype = {
 	// The current version of jQuery being used
 	jquery: core_version,
 
+	//手动让 jQuery.prototype.constructor 指回 jQuery构造函数
 	constructor: jQuery,
 	//初始化和参数管理
+	// 即 构造jQuery对象实际上最后是调用这个方法(new jQuery.fn.init( selector, context, rootjQuery ) )
+	// $('#xxx') -> new jQuery('#xxx')
+	// 这个方法可以称作 jQuery对象构造器
 	init: function( selector, context, rootjQuery ) {
 		var match, elem;
 
-		// HANDLE: $(""), $(null), $(undefined), $(false)
+		// HANDLE: $(""), $(null), $(undefined), $(false),增加程序容错性
 		if ( !selector ) {
 			return this;//如果没有传递参数，则返回一个init的实例对象
 		}
 
 		// Handle HTML strings 
 		if ( typeof selector === "string" ) {
+
+			// 下面这个 if 条件判断是先给 match 变量赋值
+			// if 条件相当于这个正则式 /^<\.+>$/
+			// 也就是以  "<"开始，">"结尾，且长度大于等于3 ，
+			// ex. <p> <html>
 			if ( selector.charAt(0) === "<" && selector.charAt( selector.length - 1 ) === ">" && selector.length >= 3 ) {
 				// Assume that strings that start and end with <> are HTML and skip the regex check
+				//$('<li>') --> match = [null, '<li>', null]
 				match = [ null, selector, null ];
 
 			} else {
+				//rquickExpr = /^(?:\s*(<[\w\W]+>)[^>]*|#([\w-]*))$/
+				//$('#id') -->match = ['#id',null,'id']
+				//$('.box') $('div')  $('#div1 div.box') -->match = null
+				//$('  <li>  ')  --> mathch = ['  <li>  ', '<li>', null]
+				//$('<li>hello') --> match = ['<li>hello','<li>',null]
 				match = rquickExpr.exec( selector );
 			}
 
@@ -125,6 +151,8 @@ jQuery.fn = jQuery.prototype = {
 					context = context instanceof jQuery ? context[0] : context;
 
 					// scripts is true for back-compat
+					//这是一种内部方法，可以将两个jQuery实例对象合并成一个，也可以将DOM节点数组添加到jQuery实例当中
+					//$.merge($('li'), $('p')) -->
 					jQuery.merge( this, jQuery.parseHTML(
 						match[1],
 						context && context.nodeType ? context.ownerDocument || context : document,
@@ -132,6 +160,18 @@ jQuery.fn = jQuery.prototype = {
 					) );//将生成的HTML元素通过merge方法添加到this对象中
 
 					// HANDLE: $(html, props)
+					// HANDLE: $(html, props)
+					// 这个 if 语句的作用是当 传入的selector 是纯 HTML 标签，且 context 不为空，相当于
+					// var jqHTML = $('<div></div>', { class: 'css-class', data-name: 'data-val' });
+					// console.log(jqHTML.attr('class')); //css-class
+					// console.log(jqHTML.attr('data-name')); //data-val
+					// rsingleTag = /^<(\w+)\s*\/?>(?:<\/\1>|)$/
+					// 上面这个正则匹配的是 纯HTML标签,不带任何属性 ，如 '<html></html>' 或者 '<img/>'
+					// rsingleTag.test('<html></html>') --> true
+					// rsingleTag.test('<img/>') --> true
+					// rsingleTag.test('<div class="foo"></div>') --> false
+					// jQuery.isPlainObject 用于测试是否为纯粹的对象
+					// 纯粹的对象指的是 通过 "{}" 或者 "new Object" 创建的
 					if ( rsingleTag.test( match[1] ) && jQuery.isPlainObject( context ) ) {
 						for ( match in context ) {
 							// Properties of context are called as methods if possible
@@ -165,16 +205,28 @@ jQuery.fn = jQuery.prototype = {
 				}
 
 			// HANDLE: $(expr, $(...))
+			// 如果第一个参数是一个.className ，第二参数为一个选择器
 			} else if ( !context || context.jquery ) {
+				// rootjQuery 相当于 jQuery(document)
+				// 下面的 return 相当于 $(context).find( selector )
+				// (如果 context 为空) jQuery(document).find( selector )
+				// 调用 Sizzle 引擎进行更复杂的选择器查找
 				return ( context || rootjQuery ).find( selector );
 
 			// HANDLE: $(expr, context)
 			// (which is just equivalent to: $(context).find(expr)
+			// (which is just equivalent to: $(context).find(expr)
+			// 如果第一个参数是.className，第二个参数是一个上下文对象
+			// 等同于处理$(.className ,.className)
 			} else {
+				// this.constructor 即是 jQuery.fn.init
+				// this.constructor( context ).find( selector ) -> jQuery(context).find(selector)
+				// 调用 Sizzle 引擎进行更复杂的选择器查找
 				return this.constructor( context ).find( selector );
 			}
 
 		// HANDLE: $(DOMElement)
+		// 处理DOMElement,返回修改过后的this对象
 		} else if ( selector.nodeType ) {
 			this.context = this[0] = selector;
 			this.length = 1;
@@ -182,10 +234,14 @@ jQuery.fn = jQuery.prototype = {
 
 		// HANDLE: $(function)
 		// Shortcut for document ready
+		// Shortcut for document ready
+		// 处理$(function(){})
 		} else if ( jQuery.isFunction( selector ) ) {
 			return rootjQuery.ready( selector );
 		}
 
+		// 匹配选择器里嵌套了一个选择器
+		// $($('#container')) 相当于 $('#container')
 		if ( selector.selector !== undefined ) {
 			this.selector = selector.selector;
 			this.context = selector.context;
@@ -200,12 +256,17 @@ jQuery.fn = jQuery.prototype = {
 	// The default length of a jQuery object is 0
 	length: 0,
 
+	// 将 jQuery 对象转换成数组类型，这里返回的结果就真的是 Array 类型了
+	// 相当于 Array.prototype.slice.call(this)
 	toArray: function() {
 		return core_slice.call( this );
 	},
 
 	// Get the Nth element in the matched element set OR
 	// Get the whole matched element set as a clean array
+	// 如果 num 不为 空 ，将返回索引为 num 的元素节点，之后可以对这个节点采用原生的方法和属性
+	// 如果Num为空， 返回一个元素节点数组
+	// 当 num 为负数的时候，相当于从数组尾巴倒数索引
 	get: function( num ) {
 		return num == null ?
 
@@ -218,13 +279,19 @@ jQuery.fn = jQuery.prototype = {
 
 	// Take an array of elements and push it onto the stack
 	// (returning the new matched element set)
+	// Build a new jQuery matched element set
+	// 构建一个新的jQuery对象，无参的 this.constructor()，只是返回引用 this
+	// jQuery.merge 把 elems 节点，合并到新的 jQuery 对象
+	// this.constructor 就是 jQuery 的构造函数 jQuery.fn.init，所以 this.constructor() 返回一个 jQuery 对象
+	// 由于 jQuery.merge 函数返回的对象是第二个函数附加到第一个上面，所以 ret 也是一个 jQuery 对象，这里可以解释为什么 pushStack 出入的 DOM 对象也可以用 CSS 方法进行操作
+	// 返回的对象的 prevObject 属性指向上一个对象，所以可以通过这个属性找到栈的上一个对象
 	pushStack: function( elems ) {
 
 		// Build a new jQuery matched element set
 		var ret = jQuery.merge( this.constructor(), elems );
 
 		// Add the old object onto the stack (as a reference)
-		ret.prevObject = this;
+		ret.prevObject = this;//这一步操作是为了end()方法建立的
 		ret.context = this.context;
 
 		// Return the newly-formed element set
