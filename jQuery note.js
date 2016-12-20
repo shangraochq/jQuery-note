@@ -291,7 +291,7 @@ jQuery.fn = jQuery.prototype = {
 		var ret = jQuery.merge( this.constructor(), elems );
 
 		// Add the old object onto the stack (as a reference)
-		ret.prevObject = this;//这一步操作是为了end()方法建立的
+		ret.prevObject = this;//这一步操作是为了end()方法设置的属性
 		ret.context = this.context;
 
 		// Return the newly-formed element set
@@ -301,47 +301,50 @@ jQuery.fn = jQuery.prototype = {
 	// Execute a callback for every element in the matched set.
 	// (You can seed the arguments with an array of args, but this is
 	// only used internally.)
+	//学了each再回来标注
 	each: function( callback, args ) {
 		return jQuery.each( this, callback, args );
 	},
-
+	//学了promise和done再回来标注
 	ready: function( fn ) {
 		// Add the callback
 		jQuery.ready.promise().done( fn );
 
 		return this;
-	},
-
+	},	
+	// 构建一个新的jQuery对象数组，并可以回溯回上一个对象
 	slice: function() {
 		return this.pushStack( core_slice.apply( this, arguments ) );
 	},
-
+	//返回jquery对象集中的第一个对象
 	first: function() {
 		return this.eq( 0 );
 	},
-
+	//返回jquery对象集中的最后一个对象
 	last: function() {
 		return this.eq( -1 );
 	},
-
+	//返回jquery对象集中第i个对象
 	eq: function( i ) {
 		var len = this.length,
 			j = +i + ( i < 0 ? len : 0 );
 		return this.pushStack( j >= 0 && j < len ? [ this[j] ] : [] );
 	},
-
+	//?
 	map: function( callback ) {
 		return this.pushStack( jQuery.map(this, function( elem, i ) {
 			return callback.call( elem, i, elem );
 		}));
 	},
 
+	//来返回栈中的前一个状态,利用了pushStack中设置的prevObject属性
 	end: function() {
 		return this.prevObject || this.constructor(null);
 	},
 
 	// For internal use only.
 	// Behaves like an Array's method, not like a jQuery method.
+	//将数组对象的几个方法挂载到jQuery对象下供内部使用
 	push: core_push,
 	sort: [].sort,
 	splice: [].splice
