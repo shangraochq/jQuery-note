@@ -353,6 +353,9 @@ jQuery.fn = jQuery.prototype = {
 // Give the init function the jQuery prototype for later instantiation
 jQuery.fn.init.prototype = jQuery.fn;//将init函数的原型指向jQuery的原型
 
+// 如果传入两个或多个对象，所有对象的属性会被添加到第一个对象 target，如果第一个参数是 true，则是深拷贝
+// 如果只传入一个对象，且通过 $.extend(object)调用，则将object中的属性或者方法添加到 jQuery 函数中，也就是为函数添加静态方法
+// 如果只传入一个对象，且通过 $.fn.extend(object)调用，则将object中的属性或者方法添加到 jQuery.prototype中，也就是为jQuery对象添加实例方法
 jQuery.extend = jQuery.fn.extend = function() {
 	var options, name, src, copy, copyIsArray, clone,
 		target = arguments[0] || {},
@@ -361,6 +364,7 @@ jQuery.extend = jQuery.fn.extend = function() {
 		deep = false;
 
 	// Handle a deep copy situation
+	// 如果第一个参数是布尔类型，则表示是否要深递归，
 	if ( typeof target === "boolean" ) {
 		deep = target;
 		target = arguments[1] || {};
@@ -369,16 +373,18 @@ jQuery.extend = jQuery.fn.extend = function() {
 	}
 
 	// Handle case when target is a string or something (possible in deep copy)
+	//如果target不是对象或者函数，这设置target = {};
 	if ( typeof target !== "object" && !jQuery.isFunction(target) ) {
 		target = {};
 	}
 
 	// extend jQuery itself if only one argument is passed
+	// 如果i === length,即只传入了一个参数，表示的是执行添加插件的作用，所以将target 设置成this，也即使$或者$.fn
 	if ( length === i ) {
 		target = this;
 		--i;
 	}
-
+	//循环将传入对象的属性复制到target中
 	for ( ; i < length; i++ ) {
 		// Only deal with non-null/undefined values
 		if ( (options = arguments[ i ]) != null ) {
@@ -388,24 +394,34 @@ jQuery.extend = jQuery.fn.extend = function() {
 				copy = options[ name ];
 
 				// Prevent never-ending loop
+				// 防止循环引用，例如 extend(true, {}, {'target':{}});
 				if ( target === copy ) {
 					continue;
 				}
 
 				// Recurse if we're merging plain objects or arrays
+				//采用递归的方法实现深拷贝
 				if ( deep && copy && ( jQuery.isPlainObject(copy) || (copyIsArray = jQuery.isArray(copy)) ) ) {
 					if ( copyIsArray ) {
 						copyIsArray = false;
+						//如果target中原来存在name属性，且属性值为数组，则将copy和src合并
 						clone = src && jQuery.isArray(src) ? src : [];
 
 					} else {
+						//如果target中原来存在name属性，且属性值为对象，则将copy和src合并
+						//var a = { name : { job : 'it' } };
+						//var b = { name : {age : 30} };
+						//$.extend( true , a  , b );
+						//a --> {name: {job : 'it', age: 30}};
 						clone = src && jQuery.isPlainObject(src) ? src : {};
 					}
 
 					// Never move original objects, clone them
+					//递归操作
 					target[ name ] = jQuery.extend( deep, clone, copy );
 
 				// Don't bring in undefined values
+				//如果是浅拷贝，即使target中存在name属性，也会被复制对象中的name属性直接覆盖
 				} else if ( copy !== undefined ) {
 					target[ name ] = copy;
 				}
