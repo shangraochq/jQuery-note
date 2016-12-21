@@ -435,6 +435,7 @@ jQuery.extend = jQuery.fn.extend = function() {
 
 jQuery.extend({
 	// Unique for each copy of jQuery on the page
+	// 产生jQuery随机数 类似于： "jQuery04495858554223566356"
 	expando: "jQuery" + ( core_version + Math.random() ).replace( /\D/g, "" ),
 
 	noConflict: function( deep ) {
