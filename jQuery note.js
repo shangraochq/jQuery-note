@@ -1,16 +1,3 @@
-/*!
- * jQuery JavaScript Library v2.0.3
- * http://jquery.com/
- *
- * Includes Sizzle.js
- * http://sizzlejs.com/
- *
- * Copyright 2005, 2013 jQuery Foundation, Inc. and other contributors
- * Released under the MIT license
- * http://jquery.org/license
- *
- * Date: 2013-07-03T13:30Z
- */
 (function( window, undefined ) {
 
 // Can't do this because several apps including ASP.NET trace
@@ -433,7 +420,7 @@ jQuery.extend = jQuery.fn.extend = function() {
 	return target;
 };
 
-jQuery.extend({
+jQuery.extend({//学到了这，第15个视频的第10分钟
 	// Unique for each copy of jQuery on the page
 	// 产生jQuery随机数 类似于： "jQuery04495858554223566356"
 	expando: "jQuery" + ( core_version + Math.random() ).replace( /\D/g, "" ),
