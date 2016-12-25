@@ -430,6 +430,7 @@ jQuery.extend({//学到了这，第15个视频的第10分钟
 			window.$ = _$;
 		}
 
+
 		if ( deep && window.jQuery === jQuery ) {
 			window.jQuery = _jQuery;
 		}
