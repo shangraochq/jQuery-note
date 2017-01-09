@@ -50,6 +50,7 @@ var
 		return new jQuery.fn.init( selector, context, rootjQuery );
 	},//jQuery.fn.init.prototype = jQuery.fn;下面的这段代码保证了jQuery()返回的jQuery.fn.init实例能够使用jQuery.prototype中定义的方法
       //为什么要这么做呢？
+      
 	// Used for matching numbers
 	core_pnum = /[+-]?(?:\d*\.|)\d+(?:[eE][+-]?\d+|)/.source,
 
