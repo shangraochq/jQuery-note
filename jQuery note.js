@@ -249,7 +249,6 @@ jQuery.fn = jQuery.prototype = {
 	toArray: function() {
 		return core_slice.call( this );
 	},
-
 	// Get the Nth element in the matched element set OR
 	// Get the whole matched element set as a clean array
 	// 如果 num 不为 空 ，将返回索引为 num 的元素节点，之后可以对这个节点采用原生的方法和属性
